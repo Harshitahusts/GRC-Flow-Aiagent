@@ -21,6 +21,7 @@ human approval before anything changes.
 |-----|--------------|
 | [docs/research/01-reference-repos-study.md](docs/research/01-reference-repos-study.md) | Study of 11 open-source DPDPA / RAG compliance projects: architecture, flaws, licences, what to reuse |
 | [docs/architecture/02-agent-blueprint.md](docs/architecture/02-agent-blueprint.md) | Agent architecture, data model, finding schema, memory design, deployment modes, roadmap |
+| [docs/research/03-training-datasets.md](docs/research/03-training-datasets.md) | Kaggle and related datasets for training and evaluation, plus the DPDPA eval sets we must build |
 | [THIRD_PARTY.md](THIRD_PARTY.md) | Licence register for every external project we reference or depend on |
 
 ## Status
