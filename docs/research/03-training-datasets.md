@@ -1,9 +1,38 @@
 # Training and Evaluation Datasets (Kaggle and related)
 
-**Date:** September 2026. **Status:** shortlist only, nothing downloaded yet.
+**Date:** September 2026. **Status:** Kaggle searched via its API (28 queries, 804 unique datasets), 10 downloaded and
+inspected, first baseline trained. The machine-readable list is [`datasets/manifest.json`](../../datasets/manifest.json).
+Fetch with `python scripts/fetch_datasets.py`. Raw data is git-ignored.
 
-> **Access note:** this cloud environment's network policy blocks `kaggle.com`, so this list comes from
-> search-engine results. **Licences, sizes and contents are unverified.** Check each dataset page before downloading.
+## 0. Verified findings (after download)
+
+1. **One DPDPA-labelled dataset exists:** [`niketfuladi/dpdpa-2023-indian-privacy-policy-clause-level-risk`](https://www.kaggle.com/datasets/niketfuladi/dpdpa-2023-indian-privacy-policy-clause-level-risk)
+   (CC BY-SA 4.0). It has 816 clauses from Zomato, Nykaa, Swiggy, BigBasket, PhonePe, Flipkart, Razorpay and UIDAI, plus 55 synthetic ones.
+   Labels: `category` (9), `risk_label` (green/gray/red), `dpdpa_section`, `notes`. This corrects the earlier "no DPDPA dataset" statement below.
+   **It is noisy:** 59% of clauses are tagged S.5, the notes read as LLM-written, some sections are wrong (consent withdrawal tagged S.11 instead of S.6(4)),
+   21 rows have mojibake, and `risk_label` measures user risk, not a compliance verdict. **Use it as seed and pre-label data; re-annotate for gold.**
+2. **ai4privacy is mislabelled on Kaggle.** It is listed as MIT, but the licence file inside requires a paid corporate licence for organisations
+   with more than about 3 staff. **Do not use it commercially without that licence.**
+3. **The "valid Aadhaar" synthetic set is not valid.** In `sachintiwaryy/indian-fintech-synthetic-dataset-free-sample`, only 1,011 of 10,000
+   Aadhaar numbers pass Verhoeff, which is chance level, and the names and cities are American. Use it only as negative test cases for our detector.
+4. **Skip:** `deborareis/privacy-policies` (2018 app-policy *URLs*, not text), `yogeshm01/indian-legal-qa-dataset-10k-questions`
+   (templated "who is the respondent" questions).
+
+### First baseline: clause classifier (`scripts/train_clause_baseline.py`)
+TF-IDF + logistic regression. 5-fold cross-validation **grouped by company** (each fold's companies are never seen in training).
+Full numbers: [`reports/clause_baseline.json`](../../reports/clause_baseline.json).
+
+| Target | Macro-F1 | Accuracy | Majority-class accuracy |
+|--------|---------:|---------:|------------------------:|
+| `category` (9 classes) | **0.596** | 0.694 | 0.407 |
+| `risk_label` (3 classes) | **0.563** | 0.599 | 0.526 |
+| `dpdpa_section` (11 classes) | **0.452** | 0.707 | 0.588 |
+
+**What it tells us:** word features can recognise *topic* (category) reasonably well, but they barely beat always guessing the most
+common label on *risk*. Judging risk needs reasoning about what a clause permits, which a keyword model cannot do. This supports the
+blueprint: use an LLM to extract facts, measure it against a **re-annotated gold set**, and let rules decide. These numbers are the floor any LLM extractor must clearly beat.
+
+> The sections below are the original search-based shortlist. Where they conflict with §0, §0 wins.
 
 ## 1. What "training" means for this agent
 
@@ -79,6 +108,7 @@ Useful later for DPB orders or case law. **Not a DPDPA knowledge source.** The c
 per field; **no scenario where an unverifiable claim is shown as verified**.
 
 ## 4. Next steps
-1. Allow `kaggle.com` (and `www.kaggle.com`) in the cloud environment's network settings, or download locally.
-2. Verify each shortlisted dataset's licence on its page. Add the approved ones to `THIRD_PARTY.md`.
-3. Start dataset #1 (retrieval eval), since it depends only on the Act and Rules text.
+1. ~~Allow Kaggle access~~ (done). ~~Verify licences~~ (done for downloaded sets, see the manifest).
+2. Re-annotate the 816 DPDPA clauses into a gold set with our fact schema: DPDPA/Rule-level facts, not green/gray/red. Start with the 55 synthetic and 12 UIDAI clauses as a pilot.
+3. Run an LLM few-shot extractor on the same company-grouped folds and compare it with the baseline above.
+4. Start dataset #1 (retrieval eval), since it depends only on the Act and Rules text.

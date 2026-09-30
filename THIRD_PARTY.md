@@ -20,3 +20,15 @@ but must not copy code, data, or templates. Update this file whenever we take an
 
 Authoritative legal corpus: official Government of India publications of the Digital Personal Data
 Protection Act, 2023 and the Digital Personal Data Protection Rules, 2025.
+
+## Datasets
+
+Full list with licence checks and quality notes: [`datasets/manifest.json`](datasets/manifest.json). Raw data is never committed.
+
+| Dataset | Licence | Use |
+|---------|---------|-----|
+| [niketfuladi/dpdpa-2023-indian-privacy-policy-clause-level-risk](https://www.kaggle.com/datasets/niketfuladi/dpdpa-2023-indian-privacy-policy-clause-level-risk) | CC BY-SA 4.0 | Clause classification seed data. Attribute the author; ShareAlike applies if we redistribute derived data |
+| [krishuppal/dark-patterns](https://www.kaggle.com/datasets/krishuppal/dark-patterns) | Apache-2.0 | Consent-validity signals |
+| [alejopaullier/pii-external-dataset](https://www.kaggle.com/datasets/alejopaullier/pii-external-dataset) | Apache-2.0 | PII token classification |
+| [verracodeguacas/ai4privacy-pii](https://www.kaggle.com/datasets/verracodeguacas/ai4privacy-pii) | **Ai4Privacy custom licence (Kaggle wrongly says MIT)** | **Not for commercial use without a corporate licence** |
+| [jessemostipak/gdpr-violations](https://www.kaggle.com/datasets/jessemostipak/gdpr-violations) | Unknown | Internal evaluation only |

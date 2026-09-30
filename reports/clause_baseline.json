@@ -1,0 +1,88 @@
+{
+  "dataset": "niketfuladi/dpdpa-2023-indian-privacy-policy-clause-level-risk",
+  "model": "tfidf(1-2gram)+logreg(balanced)",
+  "cv": "GroupKFold(n_splits=5) by company",
+  "targets": {
+    "category": {
+      "n": 816,
+      "classes": {
+        "data_collection": 332,
+        "general": 33,
+        "legal_jurisdiction": 33,
+        "data_sharing": 182,
+        "security": 73,
+        "data_retention": 36,
+        "user_rights": 75,
+        "policy_changes": 38,
+        "childrens_data": 14
+      },
+      "macro_f1": 0.596,
+      "accuracy": 0.694,
+      "majority_baseline_accuracy": 0.407,
+      "majority_baseline_macro_f1": 0.064,
+      "per_class_f1": {
+        "childrens_data": 0.522,
+        "data_collection": 0.782,
+        "data_retention": 0.587,
+        "data_sharing": 0.693,
+        "general": 0.25,
+        "legal_jurisdiction": 0.571,
+        "policy_changes": 0.612,
+        "security": 0.628,
+        "user_rights": 0.72
+      }
+    },
+    "risk_label": {
+      "n": 816,
+      "classes": {
+        "gray": 429,
+        "green": 201,
+        "red": 186
+      },
+      "macro_f1": 0.563,
+      "accuracy": 0.599,
+      "majority_baseline_accuracy": 0.526,
+      "majority_baseline_macro_f1": 0.23,
+      "per_class_f1": {
+        "gray": 0.682,
+        "green": 0.571,
+        "red": 0.436
+      }
+    },
+    "dpdpa_section": {
+      "n": 816,
+      "classes": {
+        "S.5": 480,
+        "S.8": 128,
+        "S.4": 42,
+        "S.6": 34,
+        "S.7": 38,
+        "S.13": 36,
+        "S.17": 6,
+        "S.11": 15,
+        "S.12": 18,
+        "S.9": 14,
+        "N/A": 1,
+        "S.16": 4
+      },
+      "macro_f1": 0.452,
+      "accuracy": 0.707,
+      "majority_baseline_accuracy": 0.588,
+      "majority_baseline_macro_f1": 0.062,
+      "per_class_f1": {
+        "N/A": 0.0,
+        "S.11": 0.538,
+        "S.12": 0.788,
+        "S.13": 0.553,
+        "S.16": 0.0,
+        "S.17": 0.286,
+        "S.4": 0.4,
+        "S.5": 0.826,
+        "S.6": 0.5,
+        "S.7": 0.32,
+        "S.8": 0.642,
+        "S.9": 0.571
+      }
+    }
+  }
+}

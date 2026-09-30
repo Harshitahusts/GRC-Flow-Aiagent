@@ -1,0 +1,130 @@
+{
+  "_comment": "Curated external datasets. Raw data is NOT committed (see .gitignore); run scripts/fetch_datasets.py. 'licence_listed' is what Kaggle shows; 'licence_verified' is what we found inside the files. 'commercial_ok' must be confirmed by counsel before any production use.",
+  "reviewed": "2026-09-30",
+  "datasets": [
+    {
+      "id": "dpdpa_clauses",
+      "kaggle_ref": "niketfuladi/dpdpa-2023-indian-privacy-policy-clause-level-risk",
+      "task": "A: fact extraction / clause classification",
+      "size": "816 clauses, 10 sources (Zomato, Nykaa, Swiggy, BigBasket, PhonePe, Flipkart, Razorpay, UIDAI, Ola, 55 synthetic)",
+      "labels": "category (9), risk_label (green/gray/red), dpdpa_section (S.4-S.17), notes",
+      "licence_listed": "CC BY-SA 4.0",
+      "licence_verified": "CC BY-SA 4.0 (Kaggle metadata only; no licence file in archive)",
+      "commercial_ok": "yes, with attribution; ShareAlike applies to derived datasets we redistribute",
+      "fetch": true,
+      "quality_notes": "Only public DPDPA-labelled dataset found. Noisy: 59% tagged S.5; notes read as LLM-written; some section errors (e.g. consent withdrawal tagged S.11 instead of S.6(4)); 21 rows with mojibake; risk_label is user-risk, not a compliance verdict. Use as seed/pre-labels, re-annotate for gold."
+    },
+    {
+      "id": "dark_patterns",
+      "kaggle_ref": "krishuppal/dark-patterns",
+      "task": "A: consent-validity signals (Sec 6 free/unambiguous)",
+      "size": "2,356 e-commerce UI text snippets",
+      "labels": "binary + pattern category (Urgency, Scarcity, Social Proof, ...)",
+      "licence_listed": "Apache 2.0",
+      "commercial_ok": "yes",
+      "fetch": true
+    },
+    {
+      "id": "tos_summaries",
+      "kaggle_ref": "simple11/tos-summaries",
+      "task": "A/Consultant: clause -> plain-language summary pairs",
+      "licence_listed": "MIT",
+      "commercial_ok": "check upstream ToS;DR terms",
+      "fetch": true
+    },
+    {
+      "id": "gdpr_violations",
+      "kaggle_ref": "jessemostipak/gdpr-violations",
+      "task": "D: investigator scenario seeds; gdpr_text.csv is a corpus-structure template",
+      "size": "437 fines (2018-2019) + 425 GDPR sub-articles",
+      "licence_listed": "Unknown",
+      "commercial_ok": "no (unknown) - internal eval only",
+      "fetch": true
+    },
+    {
+      "id": "pii_external",
+      "kaggle_ref": "alejopaullier/pii-external-dataset",
+      "task": "B: PII token classification",
+      "size": "4,434 generated essays, BIO labels",
+      "licence_listed": "Apache 2.0",
+      "commercial_ok": "yes",
+      "fetch": true,
+      "quality_notes": "Synthetic, Western names; no Indian identifiers."
+    },
+    {
+      "id": "ai4privacy_pii",
+      "kaggle_ref": "verracodeguacas/ai4privacy-pii",
+      "task": "B: PII token classification (54 classes, multilingual)",
+      "size": "~440 MB extracted",
+      "licence_listed": "MIT",
+      "licence_verified": "Ai4Privacy custom licence: free only for individuals/small businesses (<=3 staff); corporate licence required otherwise (licensing@ai4privacy.com). The Kaggle 'MIT' label is wrong.",
+      "commercial_ok": "NO without corporate licence",
+      "fetch": false
+    },
+    {
+      "id": "indian_fintech_synthetic",
+      "kaggle_ref": "sachintiwaryy/indian-fintech-synthetic-dataset-free-sample",
+      "task": "B: NEGATIVE test cases only",
+      "licence_listed": "CC0",
+      "commercial_ok": "yes",
+      "fetch": true,
+      "quality_notes": "Claims '100% valid Aadhaar' but only 1,011/10,000 pass Verhoeff (chance level); names/cities are US (e.g. 'Austintown, Wyoming'). Useful to test that our detector REJECTS invalid Aadhaar."
+    },
+    {
+      "id": "breaches_list",
+      "kaggle_ref": "thedevastator/data-breaches-a-comprehensive-list",
+      "task": "D: synthetic breach incidents for Sec 8(6)/Rule 7 workflows",
+      "size": "352 breaches (entity, year, records, org type, method)",
+      "licence_listed": "CC0",
+      "commercial_ok": "yes",
+      "fetch": true
+    },
+    {
+      "id": "cyber_cases_india",
+      "kaggle_ref": "saisimha203/cybersecurity-cases-india",
+      "task": "D: Indian incident distributions for scenario generation",
+      "size": "1,200 rows (year, loss INR, type, city, category)",
+      "licence_listed": "CC0",
+      "commercial_ok": "yes",
+      "fetch": true,
+      "quality_notes": "Appears synthetic/aggregated; use for distributions only."
+    },
+    {
+      "id": "legal_hallucination_benchmark",
+      "kaggle_ref": "mhmda81/legal-ai-hallucination-benchmark-v2",
+      "task": "Verifier: fabricated-citation detection examples (format reference)",
+      "size": "30 cases",
+      "licence_listed": "CC BY 4.0",
+      "commercial_ok": "yes, with attribution",
+      "fetch": true
+    },
+    {
+      "id": "privacy_policies_urls",
+      "kaggle_ref": "deborareis/privacy-policies",
+      "task": "none",
+      "licence_listed": "Unknown",
+      "fetch": false,
+      "quality_notes": "441k rows of 2018 Android app policy URLs, not policy text. Skip."
+    },
+    {
+      "id": "indian_legal_qa_10k",
+      "kaggle_ref": "yogeshm01/indian-legal-qa-dataset-10k-questions",
+      "task": "none",
+      "licence_listed": "CC BY 4.0",
+      "fetch": false,
+      "quality_notes": "Templated SC case-metadata questions ('Who is the respondent in X?'). No DPDPA value. Skip."
+    },
+    {
+      "id": "gdpr_pre_consent_tracking_de",
+      "kaggle_ref": "tobiaspaulik/gdpr-pre-consent-tracking-on-1-2m-german-websites",
+      "task": "none (aggregated stats only)",
+      "licence_listed": "CC BY 4.0",
+      "fetch": false
+    }
+  ],
+  "not_on_kaggle_recommended": [
+    {"name": "OPP-115", "url": "https://usableprivacy.org/data", "note": "Best privacy-policy annotation corpus; check non-commercial terms."},
+    {"name": "OPP-115 retention re-annotation", "url": "https://data.mendeley.com/datasets/c4x958pzpm/1"},
+    {"name": "OPP-115 GDPR Art.13 purpose/consent re-annotation", "url": "https://data.mendeley.com/datasets/3dkh7f7tnh"}
+  ]
+}
