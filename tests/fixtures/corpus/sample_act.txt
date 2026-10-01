@@ -1,0 +1,33 @@
+THE SAMPLE PERSONAL DATA ACT, 2099
+A FICTIONAL TEST FIXTURE. NOT THE TEXT OF ANY LAW.
+CHAPTER I
+PRELIMINARY
+Short title.
+1. (1) This Act may be called the Sample Personal Data Act, 2099.
+(2) It is a fictional fixture used only to test software.
+Definitions.
+2. In this Act,—
+(a) "Board" means the Sample Data Protection Board;
+(b) "personal data" means any data about an identifiable individual.
+Application.
+3. This Act applies to digital personal data processed by a fiduciary.
+Grounds for processing.
+4. A fiduciary may process personal data only with consent or for a permitted use.
+CHAPTER II
+OBLIGATIONS OF FIDUCIARY
+Notice.
+5. (1) Every request for consent shall be accompanied or preceded by a notice informing the person of—
+(i) the personal data and the purpose for which it is proposed to be processed;
+(ii) the manner in which the person may exercise rights, including withdrawal of consent and grievance redressal; and
+(iii) the manner in which the person may make a complaint to the Board.
+(2) Where consent was given before this Act, the fiduciary shall give such notice as soon as practicable.
+(3) The person shall have the option to read the notice in English or in any language listed in the Eighth Schedule to the Constitution.
+Consent.
+6. (1) Consent shall be free, specific, informed, unconditional and unambiguous, with a clear affirmative action.
+(2) The person may withdraw consent at any time, with ease comparable to giving it.
+Certain permitted uses.
+7. A fiduciary may process personal data without consent for a use permitted by this section.
+General obligations.
+8. (1) A fiduciary shall protect personal data by taking reasonable security safeguards to prevent a personal data breach.
+(2) In the event of a personal data breach, the fiduciary shall give intimation of the breach to the Board and to each affected person.
+(3) The fiduciary shall erase personal data when consent is withdrawn or the purpose is no longer served.

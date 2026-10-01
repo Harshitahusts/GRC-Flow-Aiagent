@@ -79,8 +79,10 @@ def evaluate(rows: list[dict], target: str) -> dict:
         "macro_f1": round(f1_score(gold, preds, average="macro", zero_division=0), 3),
         "accuracy": round(accuracy_score(gold, preds), 3),
         "majority_baseline_accuracy": round(accuracy_score(gold, dummy_preds), 3),
-        "majority_baseline_macro_f1": round(f1_score(gold, dummy_preds, average="macro", zero_division=0), 3),
-        "per_class_f1": {c: round(s, 3) for c, s in zip(labels_seen, per_class)},
+        "majority_baseline_macro_f1": round(
+            f1_score(gold, dummy_preds, average="macro", zero_division=0), 3
+        ),
+        "per_class_f1": {c: round(s, 3) for c, s in zip(labels_seen, per_class, strict=True)},
     }
 
 
@@ -97,7 +99,8 @@ def main() -> None:
     for t, r in results["targets"].items():
         print(
             f"{t:14} macro-F1 {r['macro_f1']:.3f}  acc {r['accuracy']:.3f}  "
-            f"(majority: acc {r['majority_baseline_accuracy']:.3f}, macro-F1 {r['majority_baseline_macro_f1']:.3f})"
+            f"(majority: acc {r['majority_baseline_accuracy']:.3f}, "
+            f"macro-F1 {r['majority_baseline_macro_f1']:.3f})"
         )
     print(f"wrote {OUT.relative_to(ROOT)}")
 

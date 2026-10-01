@@ -1,3 +1,7 @@
 data/
+var/
 __pycache__/
 *.pyc
+tests/fixtures/corpus/build/
+corpus/build/
+.env

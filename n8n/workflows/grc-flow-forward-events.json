@@ -1,0 +1,125 @@
+{
+  "name": "GRC-Flow · forward events",
+  "nodes": [
+    {
+      "id": "f0ca875b-3063-4fa5-a078-8d2234d570d8",
+      "name": "Incoming event",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "151f7443-7425-4f84-a799-873bf06edb9c",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "grc-flow-submit",
+        "authentication": "headerAuth",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "7d83cfd8-54c0-4a28-a8d6-dcf16643c177",
+      "name": "Shape event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "jsCode": "// Map the trigger's data to a GRC-Flow event. Example: evidence expiring soon.\nconst b = $input.first().json.body;\nreturn [{ json: { type: b.type || 'evidence.expiring', org_id: b.org_id, payload: b.payload || {},\n  idempotency_key: b.idempotency_key } }];"
+      }
+    },
+    {
+      "id": "88262202-f262-47ab-bce9-63fee37f80b5",
+      "name": "Sign",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst secret = $env.GRC_FLOW_WEBHOOK_SECRET;\nconst body = JSON.stringify({\n  type: $json.type,\n  org_id: $json.org_id,\n  payload: $json.payload,\n  idempotency_key: $json.idempotency_key || null\n});\nconst ts = Math.floor(Date.now() / 1000).toString();\nconst sig = 'sha256=' + crypto.createHmac('sha256', secret).update(ts + '.' + body).digest('hex');\nreturn [{ json: { body, ts, sig } }];"
+      }
+    },
+    {
+      "id": "4c43a66d-bfef-446d-b04c-4eb077584c2e",
+      "name": "Submit to GRC-Flow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        920,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.GRC_FLOW_API_URL }}/v1/hooks/n8n",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-grc-timestamp",
+              "value": "={{ $json.ts }}"
+            },
+            {
+              "name": "x-grc-signature",
+              "value": "={{ $json.sig }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Incoming event": {
+      "main": [
+        [
+          {
+            "node": "Shape event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shape event": {
+      "main": [
+        [
+          {
+            "node": "Sign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign": {
+      "main": [
+        [
+          {
+            "node": "Submit to GRC-Flow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateNote": "Replace 'Incoming event' with any trigger (Google Drive file changed, a form, a cron query on Supabase). The webhook uses n8n Header Auth credentials."
+  }
+}

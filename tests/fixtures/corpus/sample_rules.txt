@@ -1,0 +1,11 @@
+THE SAMPLE PERSONAL DATA RULES, 2099
+A FICTIONAL TEST FIXTURE. NOT THE TEXT OF ANY LAW.
+Short title.
+1. These Rules may be called the Sample Personal Data Rules, 2099.
+Definitions.
+2. Words used in these Rules have the meaning given in the Act.
+Notice by fiduciary.
+3. The notice under section 5 shall be understandable independently of other information and shall list each item of personal data with its specific purpose.
+Intimation of breach.
+4. (1) On becoming aware of a breach, the fiduciary shall intimate each affected person without delay.
+(2) The fiduciary shall give the Board a detailed report within seventy-two hours of becoming aware of the breach.

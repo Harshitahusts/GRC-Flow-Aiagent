@@ -1,0 +1,86 @@
+{
+  "name": "GRC-Flow · events router",
+  "nodes": [
+    {
+      "id": "78d57dc6-de58-4eac-9a92-2e384636dd20",
+      "name": "From GRC-Flow",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "9d656581-4a84-46e2-a679-179d54a2cf6a",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "grc-flow-events",
+        "responseMode": "onReceived",
+        "options": {}
+      }
+    },
+    {
+      "id": "8da0666a-cb7b-44ba-9f7b-a30b3215491c",
+      "name": "Verify signature and route",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst item = $input.first().json;\nconst h = item.headers || {};\nconst body = JSON.stringify(item.body);\nconst ts = h['x-grc-timestamp'] || '';\nconst expected = 'sha256=' + crypto.createHmac('sha256', $env.GRC_FLOW_WEBHOOK_SECRET)\n  .update(ts + '.' + body).digest('hex');\nconst fresh = Math.abs(Date.now() / 1000 - Number(ts)) < 300;\nif (!fresh || h['x-grc-signature'] !== expected) {\n  throw new Error('GRC-Flow signature check failed');\n}\nconst e = item.body;\n// Only failures and checker alerts page a person; run.completed is logged by n8n's history.\nif (e.type === 'run.failed') {\n  return [{ json: { text: `:x: GRC-Flow run ${e.data.run_id} failed for ${e.data.org_id}: ${e.data.error}` } }];\n}\nif (e.type === 'checker.alert') {\n  const what = e.data.kind === 'health' ? `failing: ${e.data.failing.join(', ')}` : 'canary results differ';\n  return [{ json: { text: `:rotating_light: GRC-Flow checker (${e.data.kind}) ${what}` } }];\n}\nif (e.type === 'run.completed' && e.data.findings.some(f => f.status === 'gap')) {\n  const gaps = e.data.findings.filter(f => f.status === 'gap').map(f => f.check).join(', ');\n  return [{ json: { text: `:warning: New DPDPA gaps for ${e.data.org_id}: ${gaps} (run ${e.data.run_id})` } }];\n}\nreturn [];"
+      }
+    },
+    {
+      "id": "ffd4f879-e148-4501-a6e5-cc70fbdc546f",
+      "name": "Post to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#grc-alerts",
+          "mode": "name"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {}
+      }
+    }
+  ],
+  "connections": {
+    "From GRC-Flow": {
+      "main": [
+        [
+          {
+            "node": "Verify signature and route",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify signature and route": {
+      "main": [
+        [
+          {
+            "node": "Post to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateNote": "Set N8N_OUTBOUND_URL in GRC-Flow to this webhook's production URL. Add Slack credentials, or swap the Slack node for Email / Teams / a ticketing node."
+  }
+}
