@@ -1,0 +1,51 @@
+# Local / single-server stack. Supabase, Pinecone, Upstash, Sentry and Clerk are
+# managed services reached over HTTPS; only their keys go in .env.
+#   docker compose --profile init run --rm rag-init   # once, and after corpus changes
+#   docker compose up -d                              # api + worker + n8n
+services:
+  api:
+    build: .
+    env_file: .env
+    ports: ["8080:8080"]
+    volumes: ["./corpus:/app/corpus"]
+    restart: unless-stopped
+
+  worker:
+    build: .
+    env_file: .env
+    command: ["grc-flow", "worker"]
+    volumes: ["./corpus:/app/corpus:ro"]
+    restart: unless-stopped
+    depends_on: [api]
+
+  rag-init:
+    build: .
+    env_file: .env
+    command: ["grc-flow", "rag-init"]
+    volumes: ["./corpus:/app/corpus"]
+    profiles: ["init"]
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    ports: ["5678:5678"]
+    environment:
+      N8N_HOST: ${N8N_HOST:-localhost}
+      WEBHOOK_URL: ${N8N_PUBLIC_URL:-http://localhost:5678/}
+      GENERIC_TIMEZONE: Asia/Kolkata
+      # Code nodes sign/verify with HMAC and read the shared secret from the env.
+      NODE_FUNCTION_ALLOW_BUILTIN: crypto
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      GRC_FLOW_API_URL: http://api:8080
+      GRC_FLOW_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET}
+      # Store n8n's own data in Supabase too (separate schema), or drop these for SQLite.
+      DB_TYPE: ${N8N_DB_TYPE:-sqlite}
+      DB_POSTGRESDB_HOST: ${N8N_DB_HOST:-}
+      DB_POSTGRESDB_DATABASE: ${N8N_DB_NAME:-postgres}
+      DB_POSTGRESDB_USER: ${N8N_DB_USER:-}
+      DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD:-}
+      DB_POSTGRESDB_SCHEMA: n8n
+    volumes: ["n8n_data:/home/node/.n8n"]
+    restart: unless-stopped
+
+volumes:
+  n8n_data:

@@ -1,0 +1,10 @@
+{
+  "sources": [
+    {"file": "sample_act.txt", "kind": "act",
+     "title": "Sample Personal Data Act, 2099 (FICTIONAL test fixture, not law)",
+     "source_url": "https://example.invalid/sample-act", "downloaded": "2026-10-01"},
+    {"file": "sample_rules.txt", "kind": "rules",
+     "title": "Sample Personal Data Rules, 2099 (FICTIONAL test fixture, not law)",
+     "source_url": "https://example.invalid/sample-rules", "downloaded": "2026-10-01"}
+  ]
+}

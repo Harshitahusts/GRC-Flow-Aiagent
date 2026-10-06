@@ -1,0 +1,281 @@
+{
+  "name": "GRC-Flow · scheduled checker",
+  "nodes": [
+    {
+      "id": "3d5788a7-1361-4e36-873e-a22aadd6591b",
+      "name": "Every 15 min: health",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        200
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "3b4bfec0-b781-4242-ae21-49c6b1cb6c68",
+      "name": "Sign health",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        200
+      ],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst secret = $env.GRC_FLOW_WEBHOOK_SECRET;\nconst body = JSON.stringify({ action: 'health' });\nconst ts = Math.floor(Date.now() / 1000).toString();\nconst sig = 'sha256=' + crypto.createHmac('sha256', secret).update(ts + '.' + body).digest('hex');\nreturn [{ json: { body, ts, sig } }];"
+      }
+    },
+    {
+      "id": "1aacf740-f2c0-4fec-b73d-082b7072dbca",
+      "name": "Run health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.GRC_FLOW_API_URL }}/v1/hooks/n8n/checker",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-grc-timestamp",
+              "value": "={{ $json.ts }}"
+            },
+            {
+              "name": "x-grc-signature",
+              "value": "={{ $json.sig }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "df29e509-b50b-4ec4-b9e6-9bac37b95f1a",
+      "name": "Daily 06:00: canary",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        400
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 6
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d4193b4c-a9e2-43d8-8ea2-5bcd20e23c63",
+      "name": "Sign canary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        400
+      ],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst secret = $env.GRC_FLOW_WEBHOOK_SECRET;\nconst body = JSON.stringify({ action: 'canary' });\nconst ts = Math.floor(Date.now() / 1000).toString();\nconst sig = 'sha256=' + crypto.createHmac('sha256', secret).update(ts + '.' + body).digest('hex');\nreturn [{ json: { body, ts, sig } }];"
+      }
+    },
+    {
+      "id": "8b4b8d82-2c72-477a-a6c9-28181135adce",
+      "name": "Run canary",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.GRC_FLOW_API_URL }}/v1/hooks/n8n/checker",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-grc-timestamp",
+              "value": "={{ $json.ts }}"
+            },
+            {
+              "name": "x-grc-signature",
+              "value": "={{ $json.sig }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "854e1422-418d-4340-950b-d1b63d268ccc",
+      "name": "Every 10 min: sweep",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        200,
+        600
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4bd04efe-2257-4eba-bcc6-6416bbc673ee",
+      "name": "Sign sweep",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        600
+      ],
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst secret = $env.GRC_FLOW_WEBHOOK_SECRET;\nconst body = JSON.stringify({ action: 'sweep' });\nconst ts = Math.floor(Date.now() / 1000).toString();\nconst sig = 'sha256=' + crypto.createHmac('sha256', secret).update(ts + '.' + body).digest('hex');\nreturn [{ json: { body, ts, sig } }];"
+      }
+    },
+    {
+      "id": "e4e6c8a5-fdd7-4a60-b2ef-d20dba2c780a",
+      "name": "Run sweep",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        680,
+        600
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.GRC_FLOW_API_URL }}/v1/hooks/n8n/checker",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-grc-timestamp",
+              "value": "={{ $json.ts }}"
+            },
+            {
+              "name": "x-grc-signature",
+              "value": "={{ $json.sig }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every 15 min: health": {
+      "main": [
+        [
+          {
+            "node": "Sign health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign health": {
+      "main": [
+        [
+          {
+            "node": "Run health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 06:00: canary": {
+      "main": [
+        [
+          {
+            "node": "Sign canary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign canary": {
+      "main": [
+        [
+          {
+            "node": "Run canary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 10 min: sweep": {
+      "main": [
+        [
+          {
+            "node": "Sign sweep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign sweep": {
+      "main": [
+        [
+          {
+            "node": "Run sweep",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateNote": "Health every 15 min, canaries daily, stale-run sweep every 10 min. A failing check also arrives as a checker.alert on the 'events router' workflow."
+  }
+}
