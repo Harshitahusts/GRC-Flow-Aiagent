@@ -19,7 +19,9 @@ but must not copy code, data, or templates. Update this file whenever we take an
 | [Tushar-9802/DPDPA](https://github.com/Tushar-9802/DPDPA) | **Source-available, commercial use prohibited** | Reference only. **Do not copy code, requirement data, or DOCX templates** |
 
 Authoritative legal corpus: official Government of India publications of the Digital Personal Data
-Protection Act, 2023 and the Digital Personal Data Protection Rules, 2025.
+Protection Act, 2023 and the Digital Personal Data Protection Rules, 2025 (in `corpus/`; reproduction of
+Acts and government notifications is permitted under Section 52(1)(q) of the Copyright Act, 1957).
+The current files are copies pending a direct MeitY download; see `corpus/README.md`.
 
 ## Datasets
 

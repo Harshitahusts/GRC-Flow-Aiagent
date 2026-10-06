@@ -10,6 +10,7 @@ Indexing the result into Pinecone is the RAG layer's job (grc_flow.rag.layer).
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 
 from grc_agent.corpus.ingest import ingest
@@ -24,8 +25,26 @@ def corpus_version(build_dir: Path) -> str:
     return hashlib.sha256((build_dir / "chunks.jsonl").read_bytes()).hexdigest()[:16]
 
 
+def verify_checksums(corpus_dir: Path) -> None:
+    """Sources that list a sha256 in manifest.json must match it, so a swapped or
+    corrupted gazette file can't be indexed silently."""
+    manifest = json.loads((corpus_dir / "manifest.json").read_text("utf-8"))
+    for source in manifest.get("sources", []):
+        expected = source.get("sha256")
+        if not expected:
+            continue
+        actual = hashlib.sha256((corpus_dir / source["file"]).read_bytes()).hexdigest()
+        if actual != expected:
+            raise RagInitError(
+                f"{source['file']}: sha256 {actual} doesn't match the manifest ({expected}). "
+                "If you replaced the file on purpose, update the manifest."
+            )
+
+
 def build_corpus(corpus_dir: str | Path) -> tuple[Corpus, str]:
     corpus_dir = Path(corpus_dir)
+    if (corpus_dir / "manifest.json").exists():
+        verify_checksums(corpus_dir)
     report = ingest(corpus_dir)
     if not report.ok:
         problems = [

@@ -1,0 +1,22 @@
+{
+  "sources": [
+    {
+      "file": "dpdp_act_2023.pdf",
+      "kind": "act",
+      "title": "Digital Personal Data Protection Act, 2023 (No. 22 of 2023), Gazette of India Extraordinary, 11 August 2023",
+      "source_url": "https://github.com/Tushar-9802/DPDPA/blob/aae6dfb/data/raw/DPDPA_2023_official.pdf",
+      "downloaded": "2026-10-06",
+      "sha256": "4deb23981d3010c8225a2ff6149e7243dc2268455b299e283afebdd7b72a7d15",
+      "provenance": "Copy of the Government of India Press print (unmodified since 2023-08-12). meity.gov.in was blocked from the build environment; replace with a direct MeitY/eGazette download and compare the hash."
+    },
+    {
+      "file": "dpdp_rules_2025.pdf",
+      "kind": "rules",
+      "title": "Digital Personal Data Protection Rules, 2025, G.S.R. 846(E), Gazette of India Extraordinary, 13 November 2025 (English pages)",
+      "source_url": "https://github.com/Tushar-9802/DPDPA/blob/aae6dfb/data/raw/DPDP_Rules_2025_English_only.pdf",
+      "downloaded": "2026-10-06",
+      "sha256": "63bc7ca508ae4ebbbbf8731d336914d94ee6067e918b719d019193371fcc0763",
+      "provenance": "English pages extracted from the bilingual gazette by a third party (iLovePDF, 2025-11-14). Replace with the official MeitY/eGazette PDF and re-run rag-init."
+    }
+  ]
+}

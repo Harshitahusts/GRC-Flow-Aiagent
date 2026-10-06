@@ -227,3 +227,15 @@ def test_pinecone_adapter_batches_and_uses_namespaces():
     assert pc.list_ids("org-org_a", "doc:x#") == ["doc:x#0", "doc:x#1", "doc:x#2"]
     pc.delete_ids("org-org_a", [str(i) for i in range(2500)])
     assert fake.deletes == [("org-org_a", 1000), ("org-org_a", 1000), ("org-org_a", 500)]
+
+
+def test_rag_init_refuses_a_file_whose_checksum_changed(corpus_dir):
+    import json
+
+    from grc_flow.rag.init import RagInitError, build_corpus
+
+    manifest = json.loads((corpus_dir / "manifest.json").read_text())
+    manifest["sources"][0]["sha256"] = "0" * 64
+    (corpus_dir / "manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(RagInitError, match="sha256"):
+        build_corpus(corpus_dir)

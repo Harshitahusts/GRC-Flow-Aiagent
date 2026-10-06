@@ -8,7 +8,7 @@ small for now.
 
 | Namespace | Contents | Size today | Authority | Updated by |
 |---|---|---|---|---|
-| `law` | DPDP Act 2023 + DPDP Rules 2025, one or more chunks per provision | depends on the gazette PDFs in `corpus/` | **law: the only citable source** | `grc-flow rag-init` |
+| `law` | DPDP Act 2023 + DPDP Rules 2025, one or more chunks per provision | 198 provisions → 232 chunks (14 long provisions split) | **law: the only citable source** | `grc-flow rag-init` |
 | `guidance` | GRC-Ai's obligations register (obligation, evidence to request, remediation) + GRC-Ai's 13 DPDPA guidance pages | 13 register rows + 78 guidance chunks (~5,300 words) | guidance: explains and plans, never cited | `grc-flow rag-init` |
 | `org-<clerk org id>` | each organisation's own documents (notices, policies...) | grows with use | org: the client's own words | the pipeline (`index_document` step), `DELETE /v1/documents/{id}` |
 
@@ -77,8 +77,9 @@ grc-flow check       # health, including the per-namespace counts and versions
 
 ## Next (when we add data)
 
-1. The official Act and Rules PDFs in `corpus/` (and the retrieval eval in GRC-Ai's
-   `corpus/questions.draft.json`, scored after review).
+1. Replace the corpus PDFs with direct MeitY/eGazette downloads (see `corpus/README.md`), review
+   `corpus/questions.draft.json`, and score retrieval on Pinecone (`scripts/eval_retrieval.py`).
+   Local index today: 8/10 in the top 3.
 2. Review the register against the gazette, then let findings attach the matching register row
    (evidence to request, remediation).
 3. More sources as their own namespaces with their own authority: DPB orders, MeitY FAQs, sector rules.
