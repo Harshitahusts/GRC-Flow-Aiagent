@@ -16,7 +16,7 @@ n8n, ready for their own pipelines.
 | Website | **GRC-Ai** (FastAPI app) | UI for engagements, registers, evidence, analyst chat. Sends events, shows runs and findings | — |
 | Auth | **Clerk** | Sign-in, organisations, roles. The API verifies Clerk session JWTs (RS256 via JWKS, `iss`, `azp`, expiry) and scopes every query to the Clerk `org_id` | `GRC_FLOW_AUTH=dev` (refused in production) |
 | Database | **Supabase** (Postgres) | Events, runs, steps, findings, human decisions (agent memory), checker results. Reached through GRC-Ai's own Postgres layer | SQLite file |
-| Vector DB | **Pinecone** | DPDPA corpus with *integrated embedding* (`multilingual-e5-large` on `chunk_text`), so there's no separate embedding provider | In-memory TF-IDF index |
+| Vector DB | **Pinecone** | The RAG layer ([05-rag-layer.md](05-rag-layer.md)): namespaces `law`, `guidance` and one per org, with *integrated embedding* (`multilingual-e5-large`), so there's no separate embedding provider | In-memory TF-IDF index |
 | Queue, locks, cache, rate limits | **Upstash Redis** (REST) | Event queue, dead-letter list, per-event processing lock, per-org rate limit | In-process |
 | LLM | **Claude** (`claude-opus-5-5`) | Reads a notice and reports *facts with verbatim quotes*. Never decides compliance | Keyword extractor (`GRC_FLOW_AI_MODE=offline`) |
 | Rules | **dpdp-law-to-code** (MIT) | Decides compliance from the facts, with a statutory citation | — |
@@ -40,7 +40,8 @@ flowchart LR
   Q --> W[Worker]
   subgraph PIPE[Pipeline: notice_review]
     direction TB
-    S1[load_document] --> S2[retrieve_law<br/>BM25 + Pinecone, RRF]
+    S1[load_document] --> S1b[index_document<br/>Pinecone org namespace]
+    S1b --> S2[retrieve_knowledge<br/>law: BM25 + Pinecone · guidance]
     S2 --> S3[extract_facts<br/>Claude, quotes]
     S3 --> S4[ground_facts<br/>checker]
     S4 --> S5[apply_rules<br/>dpdp-law-to-code]
@@ -81,7 +82,8 @@ sequenceDiagram
   A->>Q: LPUSH event id
   A-->>W: 202 {event_id}
   K->>Q: RPOP, then SET NX lock (no double processing)
-  K->>P: retrieve provisions (+ BM25 over the same corpus)
+  K->>P: index the notice into org-<id> (old chunks replaced)
+  K->>P: retrieve law (+ BM25 over the same corpus) and guidance
   K->>C: notice + provisions → facts with verbatim quotes (structured JSON)
   K->>K: checker: every "yes" quote must be in the notice, else → unknown
   K->>K: rules decide per check; unknown/low-confidence → needs_human_review
@@ -101,8 +103,8 @@ The checker makes sure the flows work. It **fails closed**: anything it can't ve
 
 | Level | When | What it checks | On failure |
 |---|---|---|---|
-| **Per run** | Every pipeline run | Quotes are verbatim in the document (whitespace and curly-quote tolerant). Citations resolve in the ingested corpus. No `compliant`/`gap` on an unknown fact. All 8 steps ran and reported ok | Fact → `unknown`, finding → `needs_human_review`, run → `needs_human_review` |
-| **Health** | n8n every 15 min, `GET /health/deep`, `grc-flow check` | Database, queue depth, corpus loaded, Pinecone record count and corpus version match, LLM configured, n8n/Sentry/Clerk configured (required in production) | `checker.alert` to n8n, Sentry error |
+| **Per run** | Every pipeline run | Quotes are verbatim in the document (whitespace and curly-quote tolerant). Citations resolve in the ingested corpus. No `compliant`/`gap` on an unknown fact. All 9 steps ran and reported ok | Fact → `unknown`, finding → `needs_human_review`, run → `needs_human_review` |
+| **Health** | n8n every 15 min, `GET /health/deep`, `grc-flow check` | Database, queue depth, corpus loaded, Pinecone record counts and knowledge version per namespace (law, guidance), LLM configured, n8n/Sentry/Clerk configured (required in production) | `checker.alert` to n8n, Sentry error |
 | **Canaries** | n8n daily, `grc-flow canary` | Two fictional notices with known answers go through the *real* pipeline. Any status differing from expected is a regression | `checker.alert`, Sentry |
 | **Sweep** | Worker every 5 min, n8n every 10 min | Runs left `running` > 15 min (crashed worker) are marked `abandoned` and re-queued | Re-queue, Sentry warning |
 
@@ -187,7 +189,7 @@ These are changes for a PR on the GRC-Ai repo. This session has read-only access
 
 | Area | State |
 |---|---|
-| Pipeline, rules, checker, memory, API, CLI | Built. 42 tests pass on SQLite and on PostgreSQL 16 |
+| Pipeline, rules, checker, memory, API, CLI, RAG layer | Built. 57 tests pass on SQLite and on PostgreSQL 16 |
 | Offline end to end | `grc-flow demo` and a real server + worker over HTTP, all health checks green |
 | n8n | 3 importable workflows. Signature code verified under Node against real backend output |
 | Claude extraction | Built on GRC-Ai's call pattern. **Tested with a fake client only** (no API key in this environment) |

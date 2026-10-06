@@ -22,6 +22,7 @@ human approval before anything changes.
 | [docs/research/01-reference-repos-study.md](docs/research/01-reference-repos-study.md) | Study of 11 open-source DPDPA / RAG compliance projects: architecture, flaws, licences, what to reuse |
 | [docs/architecture/02-agent-blueprint.md](docs/architecture/02-agent-blueprint.md) | Agent architecture, data model, finding schema, memory design, deployment modes, roadmap |
 | [docs/architecture/04-system-design.md](docs/architecture/04-system-design.md) | **Prototype system design**: stack, flows, checker agent, data model, security, deployment, GRC-Ai integration |
+| [docs/architecture/05-rag-layer.md](docs/architecture/05-rag-layer.md) | The RAG layer: namespaces (law, guidance, per-org documents), chunking, hybrid search, who uses it |
 | [docs/research/03-training-datasets.md](docs/research/03-training-datasets.md) | Kaggle and related datasets for training and evaluation, plus the DPDPA eval sets we must build |
 | [THIRD_PARTY.md](THIRD_PARTY.md) | Licence register for every external project we reference or depend on |
 
@@ -32,7 +33,8 @@ website. It reuses GRC-Ai's corpus ingester, BM25 search, citation index and Pos
 
 ```
 event (website / n8n) → Upstash queue → worker:
-  retrieve law (BM25 + Pinecone) → Claude extracts facts with quotes → checker grounds quotes
+  index the document (Pinecone, org namespace) → retrieve law + guidance (RAG layer)
+  → Claude extracts facts with quotes → checker grounds quotes
   → dpdp-law-to-code decides → agent memory → checker verifies → Supabase → n8n
 ```
 
@@ -42,7 +44,7 @@ Every service has a local stand-in, so it runs with no keys:
 ```bash
 pip install -e ".[dev]"
 grc-flow demo          # offline end to end on a fictional corpus
-pytest -q              # 42 tests; set GRC_FLOW_TEST_DATABASE_URL to run them on Postgres
+pytest -q              # 57 tests; set GRC_FLOW_TEST_DATABASE_URL to run them on Postgres
 ```
 
 With real services: copy `.env.example` to `.env`, put the gazette PDFs and `manifest.json` in
@@ -51,7 +53,7 @@ With real services: copy `.env.example` to `.env`, put the gazette PDFs and `man
 
 | Command | What it does |
 |---|---|
-| `grc-flow rag-init` | Ingest the Act and Rules, create and fill the Pinecone index |
+| `grc-flow rag-init` | Ingest the Act and Rules, chunk law + guidance, create and sync the Pinecone index |
 | `grc-flow serve [--with-worker]` | API on :8080 (`--with-worker` for single-box setups) |
 | `grc-flow worker [--once]` | Process queued events |
 | `grc-flow check` / `canary` | Checker agent: health probes / known-answer runs |

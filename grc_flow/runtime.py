@@ -16,8 +16,8 @@ from grc_flow.agents.checker import Checker
 from grc_flow.agents.extractor import Extractor, make_extractor
 from grc_flow.config import Settings
 from grc_flow.pipeline import events
-from grc_flow.rag.init import load_built_corpus, to_records
-from grc_flow.rag.retrieve import HybridRetriever
+from grc_flow.rag.init import load_built_corpus
+from grc_flow.rag.layer import NS_LAW, RagLayer
 
 
 @dataclass
@@ -26,8 +26,7 @@ class Runtime:
     store: Store
     kv: KV
     index: VectorIndex
-    retriever: HybridRetriever | None
-    corpus_version: str | None
+    rag: RagLayer | None
     extractor: Extractor
     outbound: Outbound
     checker: Checker
@@ -39,18 +38,20 @@ class Runtime:
             raise SystemExit("Refusing to start in production: " + "; ".join(problems))
         obs.init(settings)
         index = overrides.get("index") or make_index(settings)
-        built = load_built_corpus(settings.corpus_dir)
-        if built and isinstance(index, MemoryIndex) and not index.count():
-            # The local index lives in this process only; fill it from the built corpus.
-            index.upsert(to_records(*built))
-        retriever = HybridRetriever(built[0], index, built[1]) if built else None
+        if "rag" in overrides:
+            rag = overrides["rag"]
+        else:
+            built = load_built_corpus(settings.corpus_dir)
+            rag = RagLayer(index, *built) if built else None
+            if rag and isinstance(index, MemoryIndex) and not index.count(NS_LAW):
+                # The local index lives in this process only; fill it from the built corpus.
+                rag.sync_knowledge()
         return cls(
             settings=settings,
             store=overrides.get("store") or Store(settings.database_target),
             kv=overrides.get("kv") or make_kv(settings),
             index=index,
-            retriever=overrides.get("retriever", retriever),
-            corpus_version=overrides.get("corpus_version", built[1] if built else None),
+            rag=rag,
             extractor=overrides.get("extractor") or make_extractor(settings),
             outbound=overrides.get("outbound")
             or Outbound(settings.n8n_outbound_url, settings.n8n_webhook_secret),

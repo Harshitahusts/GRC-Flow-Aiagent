@@ -62,7 +62,8 @@ class Verdict:
 
 EXPECTED_STEPS = (
     "load_document",
-    "retrieve_law",
+    "index_document",
+    "retrieve_knowledge",
     "extract_facts",
     "ground_facts",
     "apply_rules",
@@ -164,23 +165,29 @@ class Checker:
         probe(
             "corpus",
             lambda: {
-                "ok": rt.retriever is not None,
-                "version": rt.corpus_version,
-                "chunks": len(rt.retriever.corpus.chunks) if rt.retriever else 0,
-                **({} if rt.retriever else {"error": "Run `grc-flow rag-init`."}),
+                "ok": rt.rag is not None,
+                "version": rt.rag.version if rt.rag else None,
+                "provisions": len(rt.rag.corpus.chunks) if rt.rag else 0,
+                **({} if rt.rag else {"error": "Run `grc-flow rag-init`."}),
             },
         )
 
         def vectors():
-            count = rt.index.count()
-            chunks = len(rt.retriever.corpus.chunks) if rt.retriever else None
-            ok = count is not None and chunks is not None and count >= chunks
-            out = {"ok": ok, "backend": rt.index.name, "records": count, "chunks": chunks}
-            if rt.retriever:
-                hits = rt.index.search("personal data breach intimation", 1)
-                version = hits[0].fields.get("corpus_version") if hits else None
-                out["version_matches"] = version == rt.corpus_version
-                out["ok"] = ok and out["version_matches"]
+            if rt.rag is None:
+                return {"ok": False, "backend": rt.index.name, "error": "No knowledge loaded."}
+            out: dict[str, Any] = {"ok": True, "backend": rt.index.name}
+            for ns, expected in rt.rag.expected_counts().items():
+                count = rt.index.count(ns)
+                hits = rt.index.search(ns, "personal data notice consent breach", 1)
+                current = bool(hits) and hits[0].fields.get("version") == rt.rag.version
+                ok = count is not None and count >= expected and current
+                out[ns] = {
+                    "ok": ok,
+                    "records": count,
+                    "expected": expected,
+                    "version_matches": current,
+                }
+                out["ok"] = out["ok"] and ok
             return out
 
         probe("vectors", vectors)

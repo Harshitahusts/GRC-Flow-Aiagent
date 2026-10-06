@@ -29,7 +29,6 @@ class Settings:
     # Pinecone (index with integrated embedding). Empty api key means an in-memory index.
     pinecone_api_key: str = ""
     pinecone_index: str = "grc-dpdpa"
-    pinecone_namespace: str = "dpdpa-corpus"
     pinecone_cloud: str = "aws"
     pinecone_region: str = "us-east-1"
     pinecone_embed_model: str = "multilingual-e5-large"
@@ -70,7 +69,6 @@ class Settings:
             sqlite_path=_env("GRC_FLOW_SQLITE_PATH", cls.sqlite_path),
             pinecone_api_key=_env("PINECONE_API_KEY"),
             pinecone_index=_env("PINECONE_INDEX", cls.pinecone_index),
-            pinecone_namespace=_env("PINECONE_NAMESPACE", cls.pinecone_namespace),
             pinecone_cloud=_env("PINECONE_CLOUD", cls.pinecone_cloud),
             pinecone_region=_env("PINECONE_REGION", cls.pinecone_region),
             pinecone_embed_model=_env("PINECONE_EMBED_MODEL", cls.pinecone_embed_model),

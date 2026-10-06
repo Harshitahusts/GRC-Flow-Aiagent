@@ -1,7 +1,8 @@
 """The pipeline: a fixed sequence of steps, each one timed and recorded.
 
 notice_review:
-  load_document -> retrieve_law -> extract_facts -> ground_facts (checker)
+  load_document -> index_document (Pinecone, org namespace) -> retrieve_knowledge
+  -> extract_facts -> ground_facts (checker)
   -> apply_rules -> apply_memory -> verify_findings (checker) -> persist -> notify
 
 Run status:
@@ -108,7 +109,7 @@ def _notice_review(rt, run: _Run, event: dict[str, Any]) -> tuple[str, dict]:
     issues: list[Issue] = []
 
     def load_document():
-        if rt.retriever is None:
+        if rt.rag is None:
             raise RuntimeError("The corpus isn't built. Run `grc-flow rag-init` first.")
         ctx["doc"] = payload["text"]
         return {
@@ -116,13 +117,23 @@ def _notice_review(rt, run: _Run, event: dict[str, Any]) -> tuple[str, dict]:
             "sha256": hashlib.sha256(ctx["doc"].encode()).hexdigest()[:16],
         }
 
-    def retrieve_law():
-        hits = rt.retriever.search(LAW_QUERY, k=5)
+    def index_document():
+        return rt.rag.index_document(
+            event["org_id"], subject, ctx["doc"], title=payload.get("title", "")
+        )
+
+    def retrieve_knowledge():
+        # Law goes to the extractor as context; guidance (register rows, notes) is
+        # recorded so a reviewer can see what the analyst would draw on.
+        hits = rt.rag.search(LAW_QUERY, k=5, scope=("law",))
+        guidance = rt.rag.search(LAW_QUERY, k=3, scope=("guidance",))
         ctx["provisions"] = [{"ref": h.ref, "heading": h.heading, "text": h.text} for h in hits]
+        ctx["guidance"] = [h.id for h in guidance]
         return {
             "refs": [h.ref for h in hits],
             "via": {h.ref: h.via for h in hits},
-            "corpus_version": rt.corpus_version,
+            "guidance": ctx["guidance"],
+            "knowledge_version": rt.rag.version,
         }
 
     def extract_facts():
@@ -145,7 +156,7 @@ def _notice_review(rt, run: _Run, event: dict[str, Any]) -> tuple[str, dict]:
         return {"downgraded": [i.detail.split(":")[0] for i in found]}
 
     def apply_rules():
-        ctx["findings"] = rules.evaluate(subject, ctx["facts"], rt.retriever.resolves)
+        ctx["findings"] = rules.evaluate(subject, ctx["facts"], rt.rag.resolves)
         return {"statuses": {f["check"]: f["status"] for f in ctx["findings"]}}
 
     def apply_memory():
@@ -175,7 +186,7 @@ def _notice_review(rt, run: _Run, event: dict[str, Any]) -> tuple[str, dict]:
         return {"memory": notes}
 
     def verify_findings():
-        found = rt.checker.verify_findings(ctx["findings"], rt.retriever.resolves)
+        found = rt.checker.verify_findings(ctx["findings"], rt.rag.resolves)
         issues.extend(found)
         return {"issues": [i.code for i in found]}
 
@@ -185,7 +196,8 @@ def _notice_review(rt, run: _Run, event: dict[str, Any]) -> tuple[str, dict]:
 
     for name, fn in (
         ("load_document", load_document),
-        ("retrieve_law", retrieve_law),
+        ("index_document", index_document),
+        ("retrieve_knowledge", retrieve_knowledge),
         ("extract_facts", extract_facts),
         ("ground_facts", ground_facts),
         ("apply_rules", apply_rules),

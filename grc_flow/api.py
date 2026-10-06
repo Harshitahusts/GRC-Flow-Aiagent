@@ -5,7 +5,8 @@ Website (GRC-Ai)                          n8n
   GET  /v1/runs          recent runs        (signed; see adapters/n8n.py)
   GET  /v1/runs/{id}     steps + findings
   POST /v1/decisions     accept / dismiss a finding (agent memory)
-  POST /v1/rag/search    search the Act and Rules
+  POST /v1/rag/search    search law, guidance and the org's own documents
+  DELETE /v1/documents/{id}  drop a document's chunks from the org namespace
 Ops (Clerk org admins)
   GET  /health           liveness, no auth (for the load balancer / uptime checks)
   GET  /health/deep      every integration, via the checker agent
@@ -55,6 +56,8 @@ class DecisionIn(BaseModel):
 class SearchIn(BaseModel):
     query: str = Field(min_length=2, max_length=500)
     k: int = Field(default=5, ge=1, le=20)
+    # law: Act + Rules (citable); guidance: register + notes; org: your own documents
+    scope: list[Literal["law", "guidance", "org"]] = Field(default=["law", "guidance"])
 
 
 def create_app(settings: Settings | None = None, runtime: Runtime | None = None) -> FastAPI:
@@ -146,22 +149,20 @@ def create_app(settings: Settings | None = None, runtime: Runtime | None = None)
 
     @app.post("/v1/rag/search")
     def rag_search(body: SearchIn, user: User) -> dict[str, Any]:
-        if rt.retriever is None:
-            raise HTTPException(503, "The corpus isn't built yet (grc-flow rag-init).")
-        hits = rt.retriever.search(body.query, body.k)
-        return {
-            "corpus_version": rt.corpus_version,
-            "hits": [
-                {
-                    "ref": h.ref,
-                    "heading": h.heading,
-                    "score": h.score,
-                    "via": h.via,
-                    "text": h.text[:1200],
-                }
-                for h in hits
-            ],
-        }
+        if rt.rag is None:
+            raise HTTPException(503, "The knowledge base isn't built yet (grc-flow rag-init).")
+        try:
+            hits = rt.rag.search(body.query, body.k, tuple(body.scope), org_id=user.org_id)
+        except ValueError as exc:
+            raise HTTPException(422, str(exc)) from None
+        return {"knowledge_version": rt.rag.version, "hits": [h.to_dict() for h in hits]}
+
+    @app.delete("/v1/documents/{doc_id}")
+    def delete_document(doc_id: str, user: User) -> dict[str, int]:
+        """Remove a document's chunks from the org's namespace (e.g. it was deleted in GRC-Ai)."""
+        if rt.rag is None:
+            raise HTTPException(503, "The knowledge base isn't built yet (grc-flow rag-init).")
+        return {"deleted_chunks": rt.rag.delete_document(user.org_id, doc_id)}
 
     @app.post("/v1/checker/canary")
     def canary(user: User) -> dict[str, Any]:

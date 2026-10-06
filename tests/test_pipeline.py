@@ -20,16 +20,9 @@ def statuses(run: dict) -> dict[str, str]:
 
 
 def test_rag_retrieves_the_notice_section(rt):
-    hits = rt.retriever.search("what must a notice tell the person about purpose", 3)
+    hits = rt.rag.search("what must a notice tell the person about purpose", 3, scope=("law",))
     assert hits[0].ref.startswith("Section 5")
-    assert {"bm25", "vector"} & set(hits[0].via)
-
-
-def test_retriever_ignores_records_from_an_older_corpus(rt):
-    stale = dict(rt.index.records["section 8(2)"], corpus_version="old", _id="section 8(2)")
-    rt.index.upsert([stale])
-    hits = rt.retriever.search("intimation of breach to the Board", 5)
-    assert all("vector" not in h.via for h in hits if h.ref == "Section 8(2)")
+    assert {"bm25", "vector"} <= set(hits[0].via)
 
 
 def test_complete_notice_is_compliant_and_every_step_is_recorded(rt):
@@ -42,7 +35,8 @@ def test_complete_notice_is_compliant_and_every_step_is_recorded(rt):
     assert set(statuses(run).values()) == {"compliant"}
     assert [s["name"] for s in run["steps"]] == [
         "load_document",
-        "retrieve_law",
+        "index_document",
+        "retrieve_knowledge",
         "extract_facts",
         "ground_facts",
         "apply_rules",
@@ -175,7 +169,7 @@ def test_canaries_pass_and_health_is_green(rt):
 
 
 def test_health_reports_a_missing_corpus(rt, n8n_sink):
-    rt.retriever = None
+    rt.rag = None
     health = rt.checker.health(rt)
     assert not health["ok"] and not health["services"]["corpus"]["ok"]
     assert n8n_sink.bodies()[-1]["type"] == "checker.alert"
@@ -250,10 +244,11 @@ def test_oversized_documents_are_refused_not_truncated():
 
 def test_local_index_fills_itself_from_the_built_corpus(settings):
     from grc_flow.adapters.vectors import MemoryIndex
-    from grc_flow.rag.init import init_rag
+    from grc_flow.cli import rag_init
     from grc_flow.runtime import Runtime
 
-    init_rag(settings.corpus_dir, MemoryIndex())  # rag-init in "another process"
+    rag_init(settings, MemoryIndex())  # rag-init in "another process"
     rt = Runtime.build(settings)  # fresh process: new, empty memory index
-    assert rt.index.count() == len(rt.retriever.corpus.chunks)
+    assert rt.index.count("law") == len(rt.rag.law_chunks) > 0
+    assert rt.index.count("guidance") == len(rt.rag.guidance_chunks) > 0
     assert rt.checker.health(rt)["services"]["vectors"]["ok"]

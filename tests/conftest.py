@@ -15,8 +15,8 @@ from grc_flow.adapters.kv import MemoryKV
 from grc_flow.adapters.n8n import Outbound
 from grc_flow.adapters.vectors import MemoryIndex
 from grc_flow.config import Settings
-from grc_flow.rag.init import init_rag
-from grc_flow.rag.retrieve import HybridRetriever
+from grc_flow.rag.init import build_corpus
+from grc_flow.rag.layer import RagLayer
 from grc_flow.runtime import Runtime
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -66,14 +66,14 @@ def n8n_sink() -> Captured:
 @pytest.fixture
 def rt(settings: Settings, n8n_sink: Captured) -> Runtime:
     index = MemoryIndex()
-    corpus, report = init_rag(settings.corpus_dir, index)
+    rag = RagLayer(index, *build_corpus(settings.corpus_dir))
+    rag.sync_knowledge()
     client = httpx.Client(transport=httpx.MockTransport(n8n_sink.handler))
     return Runtime.build(
         settings,
         index=index,
         kv=MemoryKV(),
-        retriever=HybridRetriever(corpus, index, report.corpus_version),
-        corpus_version=report.corpus_version,
+        rag=rag,
         outbound=Outbound(settings.n8n_outbound_url, settings.n8n_webhook_secret, client),
     )
 

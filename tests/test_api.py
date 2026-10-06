@@ -92,7 +92,9 @@ def test_decisions_and_rag_search(client):
     )
     assert r.status_code == 201
     hits = client.post(
-        "/v1/rag/search", headers=ADMIN, json={"query": "breach intimation to the Board"}
+        "/v1/rag/search",
+        headers=ADMIN,
+        json={"query": "breach intimation to the Board", "scope": ["law"]},
     ).json()["hits"]
     assert hits[0]["ref"] in ("Section 8(2)", "Rule 4(1)", "Rule 4(2)")
 

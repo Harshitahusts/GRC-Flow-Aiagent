@@ -15,7 +15,7 @@ import argparse
 import json
 import os
 import sys
-from dataclasses import asdict, replace
+from dataclasses import replace
 from pathlib import Path
 
 from grc_flow.config import Settings
@@ -25,16 +25,28 @@ def _print(data) -> None:
     print(json.dumps(data, indent=2, default=str))
 
 
+def rag_init(settings: Settings, index):
+    """Ingest the corpus, chunk law + guidance, and sync both namespaces."""
+    from grc_flow.rag.init import build_corpus
+    from grc_flow.rag.layer import RagLayer
+
+    corpus, version = build_corpus(settings.corpus_dir)
+    rag = RagLayer(index, corpus, version)
+    info = index.ensure()
+    report = rag.sync_knowledge(max_tokens=info.get("max_tokens"))
+    return rag, {"index": info, "knowledge_version": rag.version, "namespaces": report}
+
+
 def cmd_rag_init(settings: Settings, _args) -> int:
     from grc_flow.adapters.vectors import make_index
-    from grc_flow.rag.init import RagInitError, init_rag
+    from grc_flow.rag.init import RagInitError
 
     try:
-        _corpus, report = init_rag(settings.corpus_dir, make_index(settings))
+        _rag, report = rag_init(settings, make_index(settings))
     except (RagInitError, FileNotFoundError, ValueError) as exc:
         print(f"rag-init failed: {exc}", file=sys.stderr)
         return 1
-    _print(asdict(report))
+    _print(report)
     return 0
 
 
@@ -106,7 +118,6 @@ def cmd_demo(settings: Settings, _args) -> int:
     from grc_flow.adapters.vectors import MemoryIndex
     from grc_flow.canaries import COMPLETE_NOTICE, INCOMPLETE_NOTICE
     from grc_flow.pipeline.worker import process_one
-    from grc_flow.rag.init import init_rag
     from grc_flow.runtime import Runtime
 
     fixtures = Path(__file__).resolve().parent.parent / "tests" / "fixtures" / "corpus"
@@ -118,9 +129,11 @@ def cmd_demo(settings: Settings, _args) -> int:
         auth_mode="dev",
         environment="development",
     )
+    Path(settings.sqlite_path).unlink(missing_ok=True)  # a fresh demo every time
     index = MemoryIndex()
-    init_rag(settings.corpus_dir, index)
-    rt = Runtime.build(settings, index=index, kv=MemoryKV())
+    rag, report = rag_init(settings, index)
+    print("knowledge:", {ns: r["chunks"] for ns, r in report["namespaces"].items()})
+    rt = Runtime.build(settings, index=index, kv=MemoryKV(), rag=rag)
     for subject, text in (
         ("doc:retail-notice", COMPLETE_NOTICE),
         ("doc:games-notice", INCOMPLETE_NOTICE),
@@ -138,7 +151,7 @@ def cmd_demo(settings: Settings, _args) -> int:
         run = rt.store.get_run(result["run_id"])
         print(f"\n{run['id']}  {run['status']}")
         for s in run["steps"]:
-            print(f"  {s['seq']}. {s['name']:<16} {s['status']:<6} {s['ms']:>4} ms")
+            print(f"  {s['seq']}. {s['name']:<20} {s['status']:<6} {s['ms']:>4} ms")
         for f in run["findings"]:
             print(f"  - {f['check_name']:<24} {f['status']:<20} {', '.join(f['citations'])}")
     _print(rt.checker.health(rt)["services"])
